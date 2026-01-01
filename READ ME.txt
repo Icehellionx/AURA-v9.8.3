@@ -1,0 +1,1 @@
+To Properly make AURA work you need to load all 4 scripts, EROS, INTENT, PULSE, and AURA.  You just need to make sure that AURA is loaded last.  AURA is also the only one to edit.  Leave the other three as is.
