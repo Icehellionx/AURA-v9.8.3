@@ -973,7 +973,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 20px;
-      height: 100%;
+      height: auto;
       padding: 20px;
     }
     .lab-column {
@@ -985,20 +985,42 @@
     .lab-column .form-group {
       display: flex;
       flex-direction: column;
-      flex: 1;
       min-height: 0;
       margin-bottom: 0;
     }
-    .lab-column .form-textarea, .lab-column .lab-debug-panel, .lab-column .chat-container {
-      flex: 1;
-      resize: none;
+    .lab-column .form-textarea {
+      resize: vertical;
+      max-height: 300px;
+    }
+    .lab-column .lab-debug-panel {
+      max-height: 200px;
+      resize: vertical;
+    }
+    .lab-column .chat-container {
+      max-height: 400px;
+    }
+    .lab-column .quill-editor-container {
+      max-height: 250px;
+    }
+    .lab-column .quill-editor-container .ql-container {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .lab-column .quill-editor-container.expanded {
+      max-height: none;
+    }
+    .lab-column .quill-editor-container.expanded .ql-container {
+      max-height: none;
     }
     .lab-debug-panel {
-        background: rgba(0,0,0,0.2); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); 
-        padding: 10px; font-size: 11px; color: var(--text-muted); 
-        overflow-y: auto; 
+        background: rgba(0,0,0,0.2); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);
+        padding: 10px; font-size: 11px; color: var(--text-muted);
+        overflow-y: auto;
         font-family: monospace;
         white-space: pre-wrap;
+    }
+    .lab-debug-panel.expanded {
+      max-height: none;
     }
     .lab-debug-panel .injected {
       color: var(--success);
@@ -13699,17 +13721,26 @@ module.exports = __webpack_require__(63);
       <div id="laboratoryView" class="lab-view hidden">
         <div class="lab-column">
           <div class="form-group">
-            <label class="form-label">Global Personality</label>
+            <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+              Global Personality
+              <button type="button" class="pill-button small" onclick="window.toggleLabExpand('labPersonality')">Expand</button>
+            </label>
             <div id="labPersonality" class="quill-editor-container"></div>
           </div>
           <div class="form-group">
-            <label class="form-label">Global Scenario</label>
+            <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+              Global Scenario
+              <button type="button" class="pill-button small" onclick="window.toggleLabExpand('labScenario')">Expand</button>
+            </label>
             <div id="labScenario" class="quill-editor-container"></div>
           </div>
         </div>
         <div class="lab-column">
           <div class="form-group">
-            <label class="form-label">Scripting Debug</label>
+            <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+              Scripting Debug
+              <button type="button" class="pill-button small" onclick="window.toggleLabExpand('labScriptDebug')">Expand</button>
+            </label>
             <div id="labScriptDebug" class="lab-debug-panel">(Run simulation to see script execution log)</div>
           </div>
           <div class="form-group">
@@ -15135,6 +15166,21 @@ module.exports = __webpack_require__(63);
 
       window.toggleZenMode = function() {
         document.body.classList.toggle('zen-mode');
+      };
+
+      window.toggleLabExpand = function(elementId) {
+        var element = document.getElementById(elementId);
+        if (!element) return;
+
+        var isExpanded = element.classList.contains('expanded');
+        element.classList.toggle('expanded');
+
+        // Find the button in the parent form-group and update text
+        var formGroup = element.parentElement;
+        var button = formGroup.querySelector('button[onclick*="toggleLabExpand"]');
+        if (button) {
+          button.textContent = isExpanded ? 'Expand' : 'Collapse';
+        }
       };
 
       window.toggleContextPanel = function() {
