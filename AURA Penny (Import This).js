@@ -660,7 +660,7 @@ const DYNAMIC_LORE = [
 
 // Helper function to register entries
 // This makes it easy to add, edit, or comment out individual entries
-function {
+function registerEntry(entry) {
   DYNAMIC_LORE.push(entry);
   return entry; // for chaining if needed
 }
