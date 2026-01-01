@@ -16172,6 +16172,15 @@ module.exports = __webpack_require__(63);
           out.push("  " + JSON.stringify(cleanL, null, 2).split("\n").join("\n  ") + (k < STATE.data.dynamiclore.length - 1 ? "," : ""));
         }
         out.push("];");
+        out.push("");
+
+        // Add registerEntry helper function
+        out.push("// Helper function to register entries");
+        out.push("// This makes it easy to add, edit, or comment out individual entries");
+        out.push("function registerEntry(entry) {");
+        out.push("  DYNAMIC_LORE.push(entry);");
+        out.push("  return entry; // for chaining if needed");
+        out.push("}");
 
         return out.join("\n");
       }
@@ -16325,6 +16334,13 @@ module.exports = __webpack_require__(63);
           out.push("  " + JSON.stringify(cleanL, null, 2).split("\n").join("\n  ") + (k < STATE.data.dynamiclore.length - 1 ? "," : ""));
         }
         out.push("];");
+        out.push("");
+        out.push("// Helper function to register entries");
+        out.push("// This makes it easy to add, edit, or comment out individual entries");
+        out.push("function registerEntry(entry) {");
+        out.push("  DYNAMIC_LORE.push(entry);");
+        out.push("  return entry; // for chaining if needed");
+        out.push("}");
         return out.join("\n");
       }
 
