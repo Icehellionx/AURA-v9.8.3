@@ -15340,18 +15340,39 @@ module.exports = __webpack_require__(63);
         // Calculate triggers from all entries (Recursive)
         var triggeredEntries = []; // Array of { entry: e, reason: string }
         var activeTags = new Set();
+        var activeEmotions = new Set();
+        var activeEros = new Set();
+        var activeIntents = new Set();
         var processedIds = new Set();
         var lowerMsg = msg ? msg.toLowerCase() : "";
-            
-        // Extract tags from script injections to influence triggers
-        scriptInjections.forEach(function(inj) {
-            if (inj.diff) {
-                var tags = inj.diff.match(/\[(.*?)\]/g);
-                if (tags) {
-                    tags.forEach(function(t) { activeTags.add(t.replace(/[\[\]]/g, '').toUpperCase()); });
+
+        // Extract ALL tags from the accumulated scenario (after all scripts have run)
+        var fullScenario = mockContext.character.scenario || "";
+        var scenarioTags = fullScenario.match(/\[(.*?)\]/g);
+        if (scenarioTags) {
+            scenarioTags.forEach(function(t) {
+                var tagName = t.replace(/[\[\]]/g, '').trim().toUpperCase();
+                activeTags.add(tagName);
+
+                // Map emotion tags to activeEmotions
+                var emotionTags = ['JOY', 'SADNESS', 'ANGER', 'FEAR', 'ROMANCE', 'NEUTRAL', 'CONFUSION', 'POSITIVE', 'NEGATIVE'];
+                if (emotionTags.includes(tagName) || tagName.startsWith('LT_')) {
+                    activeEmotions.add(tagName.toLowerCase());
                 }
-            }
-        });
+
+                // Map eros tags to activeEros
+                var erosTags = ['PLATONIC', 'TENSION', 'ROMANCE', 'PHYSICAL', 'PASSION', 'EXPLICIT', 'CONFLICT', 'AFTERCARE'];
+                if (erosTags.includes(tagName) || tagName.startsWith('LT_')) {
+                    activeEros.add(tagName.toLowerCase());
+                }
+
+                // Map intent tags to activeIntents
+                var intentTags = ['QUESTION', 'DISCLOSURE', 'COMMAND', 'PROMISE', 'CONFLICT', 'SMALLTALK', 'META', 'NARRATIVE'];
+                if (intentTags.includes(tagName)) {
+                    activeIntents.add(tagName.toLowerCase());
+                }
+            });
+        }
 
         // Multi-pass loop to handle tag propagation (e.g. Entry A adds tag -> Entry B requires tag)
         for (var pass = 0; pass < 3; pass++) {
@@ -15374,21 +15395,78 @@ module.exports = __webpack_require__(63);
                     }
                 }
 
-                // 2. Inference Gates (Simple simulation)
+                // 2. Emotion Gates - Check against scenario tags
                 if (e.andAnyEmotion && e.andAnyEmotion.length) {
                     for (var emo of e.andAnyEmotion) {
-                        if (lowerMsg.includes(emo.toLowerCase())) { match = true; reasons.push("Emotion: " + emo); break; }
+                        if (activeEmotions.has(emo.toLowerCase())) { match = true; reasons.push("Emotion: " + emo); break; }
                     }
                 }
+                if (e.andAllEmotion && e.andAllEmotion.length) {
+                    var allEmotions = true;
+                    for (var emo of e.andAllEmotion) {
+                        if (!activeEmotions.has(emo.toLowerCase())) { allEmotions = false; break; }
+                    }
+                    if (allEmotions) { match = true; reasons.push("All Emotions: " + e.andAllEmotion.join(', ')); }
+                }
+
+                // Long-term emotion gates
+                if (e.andAnyLongTermEmotion && e.andAnyLongTermEmotion.length) {
+                    for (var emo of e.andAnyLongTermEmotion) {
+                        var ltEmo = emo.toLowerCase().startsWith('lt_') ? emo.toLowerCase() : 'lt_' + emo.toLowerCase();
+                        if (activeEmotions.has(ltEmo)) { match = true; reasons.push("LT Emotion: " + emo); break; }
+                    }
+                }
+                if (e.andAllLongTermEmotion && e.andAllLongTermEmotion.length) {
+                    var allLTEmotions = true;
+                    for (var emo of e.andAllLongTermEmotion) {
+                        var ltEmo = emo.toLowerCase().startsWith('lt_') ? emo.toLowerCase() : 'lt_' + emo.toLowerCase();
+                        if (!activeEmotions.has(ltEmo)) { allLTEmotions = false; break; }
+                    }
+                    if (allLTEmotions) { match = true; reasons.push("All LT Emotions: " + e.andAllLongTermEmotion.join(', ')); }
+                }
+
+                // 3. Eros Gates - Check against scenario tags
                 if (e.andAnyEros && e.andAnyEros.length) {
                     for (var eros of e.andAnyEros) {
-                        if (lowerMsg.includes(eros.toLowerCase())) { match = true; reasons.push("Eros: " + eros); break; }
+                        if (activeEros.has(eros.toLowerCase())) { match = true; reasons.push("Eros: " + eros); break; }
                     }
                 }
+                if (e.andAllEros && e.andAllEros.length) {
+                    var allEros = true;
+                    for (var eros of e.andAllEros) {
+                        if (!activeEros.has(eros.toLowerCase())) { allEros = false; break; }
+                    }
+                    if (allEros) { match = true; reasons.push("All Eros: " + e.andAllEros.join(', ')); }
+                }
+
+                // Long-term eros gates
+                if (e.andAnyLongTermEros && e.andAnyLongTermEros.length) {
+                    for (var eros of e.andAnyLongTermEros) {
+                        var ltEros = eros.toLowerCase().startsWith('lt_') ? eros.toLowerCase() : 'lt_' + eros.toLowerCase();
+                        if (activeEros.has(ltEros)) { match = true; reasons.push("LT Eros: " + eros); break; }
+                    }
+                }
+                if (e.andAllLongTermEros && e.andAllLongTermEros.length) {
+                    var allLTEros = true;
+                    for (var eros of e.andAllLongTermEros) {
+                        var ltEros = eros.toLowerCase().startsWith('lt_') ? eros.toLowerCase() : 'lt_' + eros.toLowerCase();
+                        if (!activeEros.has(ltEros)) { allLTEros = false; break; }
+                    }
+                    if (allLTEros) { match = true; reasons.push("All LT Eros: " + e.andAllLongTermEros.join(', ')); }
+                }
+
+                // 4. Intent Gates - Check against scenario tags
                 if (e.andAnyIntent && e.andAnyIntent.length) {
                     for (var intent of e.andAnyIntent) {
-                        if (lowerMsg.includes(intent.toLowerCase())) { match = true; reasons.push("Intent: " + intent); break; }
+                        if (activeIntents.has(intent.toLowerCase())) { match = true; reasons.push("Intent: " + intent); break; }
                     }
+                }
+                if (e.andAllIntent && e.andAllIntent.length) {
+                    var allIntents = true;
+                    for (var intent of e.andAllIntent) {
+                        if (!activeIntents.has(intent.toLowerCase())) { allIntents = false; break; }
+                    }
+                    if (allIntents) { match = true; reasons.push("All Intents: " + e.andAllIntent.join(', ')); }
                 }
 
                 // 3. Tag Requirements (Check against activeTags)
@@ -15409,11 +15487,87 @@ module.exports = __webpack_require__(63);
                 }
 
                 if (match) {
-                    // Blocking logic
+                    // Blocking logic - check against scenario tags
                     var blocked = false;
-                    var blockList = (e.block || []).concat(e.notAny || []).concat(e.notAnyEmotion || []).concat(e.notAnyEros || []).concat(e.notAnyIntent || []);
+
+                    // Check keyword blocks
+                    var blockList = (e.block || []).concat(e.notAny || []);
                     for (var b of blockList) {
-                        if (lowerMsg.includes(b.toLowerCase()) || activeTags.has(b)) { blocked = true; break; }
+                        if (lowerMsg.includes(b.toLowerCase()) || activeTags.has(b.toUpperCase())) { blocked = true; break; }
+                    }
+
+                    // Check emotion blocks
+                    if (e.notAnyEmotion && e.notAnyEmotion.length) {
+                        for (var emo of e.notAnyEmotion) {
+                            if (activeEmotions.has(emo.toLowerCase())) { blocked = true; break; }
+                        }
+                    }
+                    if (e.notAllEmotion && e.notAllEmotion.length) {
+                        var hasAllEmotions = true;
+                        for (var emo of e.notAllEmotion) {
+                            if (!activeEmotions.has(emo.toLowerCase())) { hasAllEmotions = false; break; }
+                        }
+                        if (hasAllEmotions) blocked = true;
+                    }
+
+                    // Check long-term emotion blocks
+                    if (e.notAnyLongTermEmotion && e.notAnyLongTermEmotion.length) {
+                        for (var emo of e.notAnyLongTermEmotion) {
+                            var ltEmo = emo.toLowerCase().startsWith('lt_') ? emo.toLowerCase() : 'lt_' + emo.toLowerCase();
+                            if (activeEmotions.has(ltEmo)) { blocked = true; break; }
+                        }
+                    }
+                    if (e.notAllLongTermEmotion && e.notAllLongTermEmotion.length) {
+                        var hasAllLTEmotions = true;
+                        for (var emo of e.notAllLongTermEmotion) {
+                            var ltEmo = emo.toLowerCase().startsWith('lt_') ? emo.toLowerCase() : 'lt_' + emo.toLowerCase();
+                            if (!activeEmotions.has(ltEmo)) { hasAllLTEmotions = false; break; }
+                        }
+                        if (hasAllLTEmotions) blocked = true;
+                    }
+
+                    // Check eros blocks
+                    if (e.notAnyEros && e.notAnyEros.length) {
+                        for (var eros of e.notAnyEros) {
+                            if (activeEros.has(eros.toLowerCase())) { blocked = true; break; }
+                        }
+                    }
+                    if (e.notAllEros && e.notAllEros.length) {
+                        var hasAllEros = true;
+                        for (var eros of e.notAllEros) {
+                            if (!activeEros.has(eros.toLowerCase())) { hasAllEros = false; break; }
+                        }
+                        if (hasAllEros) blocked = true;
+                    }
+
+                    // Check long-term eros blocks
+                    if (e.notAnyLongTermEros && e.notAnyLongTermEros.length) {
+                        for (var eros of e.notAnyLongTermEros) {
+                            var ltEros = eros.toLowerCase().startsWith('lt_') ? eros.toLowerCase() : 'lt_' + eros.toLowerCase();
+                            if (activeEros.has(ltEros)) { blocked = true; break; }
+                        }
+                    }
+                    if (e.notAllLongTermEros && e.notAllLongTermEros.length) {
+                        var hasAllLTEros = true;
+                        for (var eros of e.notAllLongTermEros) {
+                            var ltEros = eros.toLowerCase().startsWith('lt_') ? eros.toLowerCase() : 'lt_' + eros.toLowerCase();
+                            if (!activeEros.has(ltEros)) { hasAllLTEros = false; break; }
+                        }
+                        if (hasAllLTEros) blocked = true;
+                    }
+
+                    // Check intent blocks
+                    if (e.notAnyIntent && e.notAnyIntent.length) {
+                        for (var intent of e.notAnyIntent) {
+                            if (activeIntents.has(intent.toLowerCase())) { blocked = true; break; }
+                        }
+                    }
+                    if (e.notAllIntent && e.notAllIntent.length) {
+                        var hasAllIntents = true;
+                        for (var intent of e.notAllIntent) {
+                            if (!activeIntents.has(intent.toLowerCase())) { hasAllIntents = false; break; }
+                        }
+                        if (hasAllIntents) blocked = true;
                     }
 
                     if (!blocked) {
@@ -15449,6 +15603,36 @@ module.exports = __webpack_require__(63);
              debugHtml += '<div class="tag-cloud">';
              activeTags.forEach(function(t) {
                  debugHtml += '<span class="tag">' + escHtml(t) + '</span>';
+             });
+             debugHtml += '</div></div>';
+        }
+
+        if (activeEmotions.size > 0) {
+             debugHtml += '<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border-subtle);">';
+             debugHtml += '<span style="color:var(--text-muted)">Active Emotions:</span><br>';
+             debugHtml += '<div class="tag-cloud">';
+             activeEmotions.forEach(function(e) {
+                 debugHtml += '<span class="tag">' + escHtml(e) + '</span>';
+             });
+             debugHtml += '</div></div>';
+        }
+
+        if (activeEros.size > 0) {
+             debugHtml += '<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border-subtle);">';
+             debugHtml += '<span style="color:var(--text-muted)">Active Eros:</span><br>';
+             debugHtml += '<div class="tag-cloud">';
+             activeEros.forEach(function(e) {
+                 debugHtml += '<span class="tag">' + escHtml(e) + '</span>';
+             });
+             debugHtml += '</div></div>';
+        }
+
+        if (activeIntents.size > 0) {
+             debugHtml += '<div style="margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border-subtle);">';
+             debugHtml += '<span style="color:var(--text-muted)">Active Intents:</span><br>';
+             debugHtml += '<div class="tag-cloud">';
+             activeIntents.forEach(function(i) {
+                 debugHtml += '<span class="tag">' + escHtml(i) + '</span>';
              });
              debugHtml += '</div></div>';
         }
