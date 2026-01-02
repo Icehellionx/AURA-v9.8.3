@@ -11,10 +11,16 @@
    --- AUTHOR CHEAT-SHEET (for `dynamicLore` entries) ---
 
    Core Properties:
+     - id_name: Optional ID/name for this entry (for organization/debugging).
      - keywords: User words/phrases. Supports "word*", and 'char.entityName' expansion.
      - tag: Internal label for this entry (e.g., "base_open"). Not matched against text.
      - triggers: List of tags to emit when this entry fires.
-     - personality / scenario: The text to inject.
+     - priority: 1-5 (default: 3). Higher priority entries fire first.
+     - personality: The text to inject into the personality field.
+     - scenario: The text to inject into the scenario field.
+     - example_dialogs: Example conversations to inject into example dialogs.
+     - remove_personality: Text to remove from the personality field (before adding).
+     - remove_scenario: Text to remove from the scenario field (before adding).
 
    Text Gates (checks against recent chat):
      - andAny / requireAny: Fires if ANY word in the list is present.
@@ -22,25 +28,50 @@
      - notAny / requireNone / block: Blocks if ANY word in the list is present.
      - notAll: Blocks only if ALL words in the list are present.
 
-   Emotion Gates (requires AURA models):
-     - andAnyEmotion: Fires if ANY listed emotion is active.
+   Tag Gates (checks against other triggered entries):
+     - andAnyTags, andAllTags, notAnyTags, notAllTags
+
+   Emotion Gates - Current Mood (requires PULSE/AURA models):
+     - andAnyEmotion: Fires if ANY listed emotion is active (joy, sadness, anger, fear, etc.).
      - andAllEmotion: Fires if ALL listed emotions are active.
      - notAnyEmotion: Blocks if ANY listed emotion is active.
      - notAllEmotion: Blocks if ALL listed emotions are active.
 
-   Tag Gates (checks against other triggered entries):
-     - andAnyTags, andAllTags, notAnyTags, notAllTags
+   Emotion Gates - Long Term State (LT_ prefix):
+     - andAnyLongTermEmotion: Fires if ANY long-term emotion is active (lt_joy, lt_romance, etc.).
+     - andAllLongTermEmotion: Fires if ALL long-term emotions are active.
+     - notAnyLongTermEmotion: Blocks if ANY long-term emotion is active.
+     - notAllLongTermEmotion: Blocks if ALL long-term emotions are active.
+
+   EROS Gates - Current Vibe (requires EROS model):
+     - andAnyEros: Fires if ANY eros level is active (platonic, tension, romance, physical, etc.).
+     - andAllEros: Fires if ALL eros levels are active.
+     - notAnyEros: Blocks if ANY eros level is active.
+     - notAllEros: Blocks if ALL eros levels are active.
+
+   EROS Gates - Long Term State (LT_ prefix):
+     - andAnyLongTermEros: Fires if ANY long-term eros state is active (lt_romance, lt_physical, etc.).
+     - andAllLongTermEros: Fires if ALL long-term eros states are active.
+     - notAnyLongTermEros: Blocks if ANY long-term eros state is active.
+     - notAllLongTermEros: Blocks if ALL long-term eros states are active.
+
+   Intent Gates (requires INTENT model):
+     - andAnyIntent: Fires if ANY intent is active (question, disclosure, command, etc.).
+     - andAllIntent: Fires if ALL intents are active.
+     - notAnyIntent: Blocks if ANY intent is active.
+     - notAllIntent: Blocks if ALL intents are active.
 
    Special Gates & Modifiers:
      - 'prev.': Prefix a text gate (e.g., 'prev.keywords') to check the PREVIOUS message only.
      - 'char.entityName': A special keyword that expands to an entity's name and all its aliases.
-     - minMessages / maxMessages: Gates for message count.
+     - minMessages / maxMessages: Gates for message count (only fire between these bounds).
      - nameBlock: ["name"]: Blocks if the active character's name is in the list.
      - probability: 0.0 to 1.0 (or "0%" to "100%") chance for an entry to fire.
      - group: "group_name": Makes entries in the same group mutually exclusive.
 
    Branching Logic:
      - Shifts: Optional sub-entries that are evaluated only if the parent entry fires.
+               Shifts support all the same fields as parent entries.
 
    --- DYNAMIC RELATIONSHIPS ---
    Defined in `ENTITY_DB` and `RELATIONSHIP_DB`. The engine automatically detects
@@ -94,10 +125,165 @@ const DYNAMIC_LORE = [
 
 // Helper function to register entries
 // This makes it easy to add, edit, or comment out individual entries
-function {
+function registerEntry(entry) {
   DYNAMIC_LORE.push(entry);
   return entry; // for chaining if needed
 }
+
+// ============================================================================
+// [SECTION] EXAMPLE ENTRIES (Comprehensive Field Reference)
+// ============================================================================
+// Uncomment and modify the examples below to see all supported fields in action.
+
+/*
+// EXAMPLE 1: Basic Entry with Core Fields
+registerEntry({
+  // === BASIC PROPERTIES ===
+  id_name: "example_basic",           // Optional: ID for this entry (for organization)
+  tag: "example_tag",                  // Optional: Tag that other entries can trigger on
+  triggers: ["tag_a", "tag_b"],        // Optional: Tags to emit when this entry fires
+  priority: 3,                         // Optional: 1-5 (default: 3). Higher = more important
+  group: "example_group",              // Optional: Mutual exclusion group
+  probability: "75%",                  // Optional: 0-1 or "0%-100%" (default: 100%)
+
+  // === KEYWORD TRIGGERS ===
+  keywords: ["magic", "spell*"],       // Trigger if ANY keyword found in recent messages
+  block: ["combat", "battle"],         // Block if ANY of these words are present (notAny)
+
+  // === CONTENT INJECTION ===
+  personality: "Character loves magic and is enthusiastic about spells.",
+  scenario: "The character is in a magical academy setting.",
+  example_dialogs: "<START>\n{{user}}: Tell me about magic.\n{{char}}: Oh, I absolutely LOVE magic!\n<START>",
+
+  // === MESSAGE COUNT GATES ===
+  minMessages: 5,                      // Only fire after 5+ messages
+  maxMessages: 50,                     // Only fire before message 50
+
+  // === NAME BLOCKING ===
+  nameBlock: ["Bob", "Alice"],         // Block if active character is Bob or Alice
+});
+
+// EXAMPLE 2: Advanced Entry with All Gate Types
+registerEntry({
+  id_name: "example_advanced",
+  keywords: ["romance", "love"],
+
+  // === TAG GATES ===
+  andAll: ["tag_a", "tag_b"],          // Requires ALL these tags active
+  notAll: ["tag_x", "tag_y"],          // Blocks if ALL these tags active
+  // Note: "block" field above = notAny (blocks if ANY present)
+
+  // === EMOTION GATES (Current Mood) ===
+  andAnyEmotion: ["joy", "positive"],             // Fires if joy OR positive active
+  andAllEmotion: ["romance"],                     // Fires if romance is active
+  notAnyEmotion: ["anger", "fear"],               // Blocks if anger OR fear active
+  notAllEmotion: ["sadness", "negative"],         // Blocks if BOTH sadness AND negative active
+
+  // === EMOTION GATES (Long Term State) ===
+  andAnyLongTermEmotion: ["lt_joy", "lt_positive"],      // Long-term joy or positive
+  andAllLongTermEmotion: ["lt_romance"],                  // Long-term romance required
+  notAnyLongTermEmotion: ["lt_anger"],                    // Block if long-term anger
+  notAllLongTermEmotion: ["lt_sadness", "lt_fear"],       // Block if BOTH long-term
+
+  // === EROS GATES (Current Vibe) ===
+  andAnyEros: ["tension", "romance"],             // Requires tension OR romance vibe
+  andAllEros: ["physical"],                       // Requires physical intimacy
+  notAnyEros: ["conflict"],                       // Blocks if conflict present
+  notAllEros: ["platonic", "aftercare"],          // Blocks if BOTH platonic AND aftercare
+
+  // === EROS GATES (Long Term State) ===
+  andAnyLongTermEros: ["lt_romance", "lt_passion"],      // Long-term romantic connection
+  andAllLongTermEros: ["lt_physical"],                   // Established physical relationship
+  notAnyLongTermEros: ["lt_conflict"],                   // Block if long-term conflict
+  notAllLongTermEros: ["lt_platonic"],                   // Block if purely platonic long-term
+
+  // === INTENT GATES ===
+  andAnyIntent: ["disclosure", "question"],       // User sharing or asking
+  andAllIntent: ["command"],                      // User giving a command
+  notAnyIntent: ["conflict", "meta"],             // Block during conflict or meta talk
+  notAllIntent: ["smalltalk", "narrative"],       // Block if BOTH smalltalk AND narrative
+
+  personality: "Deep romantic connection and emotional vulnerability.",
+  scenario: "[ROMANCE] The atmosphere is charged with emotional intimacy.",
+});
+
+// EXAMPLE 3: Entry with Shifts (Branching Logic)
+registerEntry({
+  id_name: "example_with_shifts",
+  keywords: ["adventure"],
+  triggers: ["adventure_active"],
+  personality: "Base adventure personality.",
+
+  // === SHIFTS (Sub-entries that fire if parent fires + conditions met) ===
+  Shifts: [
+    {
+      id_name: "adventure_dangerous",
+      keywords: ["danger", "threat"],
+      triggers: ["danger_mode"],
+      personality: "SHIFT: The adventure becomes dangerous and tense.",
+      scenario: "Danger lurks around every corner.",
+
+      // Shifts support all the same gates as parent entries
+      andAnyEmotion: ["fear", "negative"],
+      priority: 4,
+    },
+    {
+      id_name: "adventure_magical",
+      keywords: ["magic", "mystical"],
+      triggers: ["magic_mode"],
+      personality: "SHIFT: The adventure takes a magical turn.",
+      andAnyEmotion: ["joy", "positive"],
+      notAnyEmotion: ["fear"],
+    }
+  ]
+});
+
+// EXAMPLE 4: Previous Message Gates
+registerEntry({
+  id_name: "example_prev_gates",
+  keywords: ["hello"],
+
+  // Use 'prev.' prefix to check ONLY the previous message (not current)
+  "prev.keywords": ["goodbye", "farewell"],
+  "prev.block": ["greeting"],
+
+  personality: "User said goodbye before, now saying hello again.",
+});
+
+// EXAMPLE 5: Always-On Entry (No Triggers)
+registerEntry({
+  id_name: "example_always_on",
+  // No keywords, no gates = always fires (useful for base personality)
+  personality: "This text is ALWAYS injected into every response.",
+  priority: 5,
+});
+
+// EXAMPLE 6: Tag-Only Entry (Fires only when triggered by other entries)
+registerEntry({
+  tag: "secret_mode",           // This entry has a tag but NO keywords
+  // It will ONLY fire if another entry emits "secret_mode" in its triggers array
+  personality: "Secret mode activated! Hidden knowledge unlocked.",
+  scenario: "[SECRET_MODE]",
+});
+
+// EXAMPLE 7: Entity-Specific Keywords
+// (Requires entities defined in ENTITY_DB below)
+registerEntry({
+  id_name: "example_entity_keyword",
+  keywords: ["char.alice"],     // Special syntax: expands to "alice" + all aliases
+  personality: "Alice is mentioned! She's the main character.",
+});
+
+// EXAMPLE 8: Removal Fields (Remove text from personality/scenario)
+registerEntry({
+  id_name: "example_removal",
+  keywords: ["formal", "business"],
+  remove_personality: "casual and friendly",  // Removes this text from personality
+  remove_scenario: "relaxed atmosphere",      // Removes this text from scenario
+  personality: "professional and formal",      // Adds this instead
+  scenario: "corporate business setting",
+});
+*/
 
 // ============================================================================
 // [SECTION] EMOTION OVERRIDES (FULL MATRIX LOGIC)
@@ -581,6 +767,31 @@ const activeName = _normalizeText(
     }
   );
 
+  // Long-term emotion gates (LT_ prefixed)
+  const _checkLongTermEmotionGates = _createGateChecker(
+    [
+      ['andAnyLongTermEmotion'],
+      ['andAllLongTermEmotion'],
+      ['notAnyLongTermEmotion'],
+      ['notAllLongTermEmotion']
+    ],
+    (s) => String(s).toLowerCase()
+  );
+
+  // Long-term eros gates (LT_ prefixed)
+  const _checkLongTermErosGates = _createGateChecker(
+    [
+      ['andAnyLongTermEros'],
+      ['andAllLongTermEros'],
+      ['notAnyLongTermEros'],
+      ['notAllLongTermEros']
+    ],
+    (s) => {
+      const v = String(s).toLowerCase();
+      return v.startsWith('eros.') ? v.slice(5) : v;
+    }
+  );
+
   function _isAlwaysOn(e) {
     if (!e) return false;
     // Fast property check
@@ -609,8 +820,10 @@ const activeName = _normalizeText(
     // Check gates (Logical short-circuits)
     if (!_checkTagGates(e, activeTagsSet || {})) return false;
     if (!_checkEmotionGates(e, activeEmotions || {})) return false;
+    if (!_checkLongTermEmotionGates(e, activeEmotions || {})) return false;
     if (!_checkIntentGates(e, activeIntents || {})) return false;
     if (!_checkErosGates(e, activeEros || {})) return false;
+    if (!_checkLongTermErosGates(e, activeEros || {})) return false;
 
     // Finally check expensive regex word gates
     if (!_checkWordGates(e)) return false;
@@ -829,9 +1042,14 @@ const activeName = _normalizeText(
 
     // Check Environment Gates (Does this entry react to AURA/EROS/INTENT tags?)
     const hasEnvGate = (
-      (e.requireAnyEmotion || e.andAnyEmotion || e.requireAllEmotion || e.andAllEmotion) ||
-      (e.requireAnyIntent || e.andAnyIntent || e.requireAllIntent || e.andAllIntent) ||
-      (e.requireAnyEros || e.andAnyEros || e.requireAllEros || e.andAllEros)
+      (e.requireAnyEmotion || e.andAnyEmotion || e.requireAllEmotion || e.andAllEmotion ||
+       e.notAnyEmotion || e.notAllEmotion || e.blockAnyEmotion || e.blockAllEmotion ||
+       e.andAnyLongTermEmotion || e.andAllLongTermEmotion || e.notAnyLongTermEmotion || e.notAllLongTermEmotion) ||
+      (e.requireAnyIntent || e.andAnyIntent || e.requireAllIntent || e.andAllIntent ||
+       e.notAnyIntent || e.notAllIntent || e.blockAnyIntent || e.blockAllIntent) ||
+      (e.requireAnyEros || e.andAnyEros || e.requireAllEros || e.andAllEros ||
+       e.notAnyEros || e.notAllEros || e.blockAnyEros || e.blockAllEros ||
+       e.andAnyLongTermEros || e.andAllLongTermEros || e.notAnyLongTermEros || e.notAllLongTermEros)
     );
 
     // Check Keywords (Current or Previous)
