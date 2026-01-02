@@ -15395,81 +15395,91 @@ module.exports = __webpack_require__(63);
                     }
                 }
 
-                // 2. Emotion Gates - Check against scenario tags
-                if (e.andAnyEmotion && e.andAnyEmotion.length) {
-                    for (var emo of e.andAnyEmotion) {
+                // 2. Emotion Gates - Check against scenario tags (support all field name variations)
+                var emotionAnyList = (e.andAnyEmotion || []).concat(e.requireAnyEmotion || []).concat(e.requireEmotion || []);
+                if (emotionAnyList.length) {
+                    for (var emo of emotionAnyList) {
                         if (activeEmotions.has(emo.toLowerCase())) { match = true; reasons.push("Emotion: " + emo); break; }
                     }
                 }
-                if (e.andAllEmotion && e.andAllEmotion.length) {
+                var emotionAllList = (e.andAllEmotion || []).concat(e.requireAllEmotion || []);
+                if (emotionAllList.length) {
                     var allEmotions = true;
-                    for (var emo of e.andAllEmotion) {
+                    for (var emo of emotionAllList) {
                         if (!activeEmotions.has(emo.toLowerCase())) { allEmotions = false; break; }
                     }
-                    if (allEmotions) { match = true; reasons.push("All Emotions: " + e.andAllEmotion.join(', ')); }
+                    if (allEmotions) { match = true; reasons.push("All Emotions: " + emotionAllList.join(', ')); }
                 }
 
                 // Long-term emotion gates
-                if (e.andAnyLongTermEmotion && e.andAnyLongTermEmotion.length) {
-                    for (var emo of e.andAnyLongTermEmotion) {
+                var ltEmotionAnyList = (e.andAnyLongTermEmotion || []);
+                if (ltEmotionAnyList.length) {
+                    for (var emo of ltEmotionAnyList) {
                         var ltEmo = emo.toLowerCase().startsWith('lt_') ? emo.toLowerCase() : 'lt_' + emo.toLowerCase();
                         if (activeEmotions.has(ltEmo)) { match = true; reasons.push("LT Emotion: " + emo); break; }
                     }
                 }
-                if (e.andAllLongTermEmotion && e.andAllLongTermEmotion.length) {
+                var ltEmotionAllList = (e.andAllLongTermEmotion || []);
+                if (ltEmotionAllList.length) {
                     var allLTEmotions = true;
-                    for (var emo of e.andAllLongTermEmotion) {
+                    for (var emo of ltEmotionAllList) {
                         var ltEmo = emo.toLowerCase().startsWith('lt_') ? emo.toLowerCase() : 'lt_' + emo.toLowerCase();
                         if (!activeEmotions.has(ltEmo)) { allLTEmotions = false; break; }
                     }
-                    if (allLTEmotions) { match = true; reasons.push("All LT Emotions: " + e.andAllLongTermEmotion.join(', ')); }
+                    if (allLTEmotions) { match = true; reasons.push("All LT Emotions: " + ltEmotionAllList.join(', ')); }
                 }
 
-                // 3. Eros Gates - Check against scenario tags
-                if (e.andAnyEros && e.andAnyEros.length) {
-                    for (var eros of e.andAnyEros) {
+                // 3. Eros Gates - Check against scenario tags (support all field name variations)
+                var erosAnyList = (e.andAnyEros || []).concat(e.requireAnyEros || []).concat(e.requireEros || []);
+                if (erosAnyList.length) {
+                    for (var eros of erosAnyList) {
                         if (activeEros.has(eros.toLowerCase())) { match = true; reasons.push("Eros: " + eros); break; }
                     }
                 }
-                if (e.andAllEros && e.andAllEros.length) {
+                var erosAllList = (e.andAllEros || []).concat(e.requireAllEros || []);
+                if (erosAllList.length) {
                     var allEros = true;
-                    for (var eros of e.andAllEros) {
+                    for (var eros of erosAllList) {
                         if (!activeEros.has(eros.toLowerCase())) { allEros = false; break; }
                     }
-                    if (allEros) { match = true; reasons.push("All Eros: " + e.andAllEros.join(', ')); }
+                    if (allEros) { match = true; reasons.push("All Eros: " + erosAllList.join(', ')); }
                 }
 
                 // Long-term eros gates
-                if (e.andAnyLongTermEros && e.andAnyLongTermEros.length) {
-                    for (var eros of e.andAnyLongTermEros) {
+                var ltErosAnyList = (e.andAnyLongTermEros || []);
+                if (ltErosAnyList.length) {
+                    for (var eros of ltErosAnyList) {
                         var ltEros = eros.toLowerCase().startsWith('lt_') ? eros.toLowerCase() : 'lt_' + eros.toLowerCase();
                         if (activeEros.has(ltEros)) { match = true; reasons.push("LT Eros: " + eros); break; }
                     }
                 }
-                if (e.andAllLongTermEros && e.andAllLongTermEros.length) {
+                var ltErosAllList = (e.andAllLongTermEros || []);
+                if (ltErosAllList.length) {
                     var allLTEros = true;
-                    for (var eros of e.andAllLongTermEros) {
+                    for (var eros of ltErosAllList) {
                         var ltEros = eros.toLowerCase().startsWith('lt_') ? eros.toLowerCase() : 'lt_' + eros.toLowerCase();
                         if (!activeEros.has(ltEros)) { allLTEros = false; break; }
                     }
-                    if (allLTEros) { match = true; reasons.push("All LT Eros: " + e.andAllLongTermEros.join(', ')); }
+                    if (allLTEros) { match = true; reasons.push("All LT Eros: " + ltErosAllList.join(', ')); }
                 }
 
-                // 4. Intent Gates - Check against scenario tags
-                if (e.andAnyIntent && e.andAnyIntent.length) {
-                    for (var intent of e.andAnyIntent) {
+                // 4. Intent Gates - Check against scenario tags (support all field name variations)
+                var intentAnyList = (e.andAnyIntent || []).concat(e.requireAnyIntent || []).concat(e.requireIntent || []);
+                if (intentAnyList.length) {
+                    for (var intent of intentAnyList) {
                         if (activeIntents.has(intent.toLowerCase())) { match = true; reasons.push("Intent: " + intent); break; }
                     }
                 }
-                if (e.andAllIntent && e.andAllIntent.length) {
+                var intentAllList = (e.andAllIntent || []).concat(e.requireAllIntent || []);
+                if (intentAllList.length) {
                     var allIntents = true;
-                    for (var intent of e.andAllIntent) {
+                    for (var intent of intentAllList) {
                         if (!activeIntents.has(intent.toLowerCase())) { allIntents = false; break; }
                     }
-                    if (allIntents) { match = true; reasons.push("All Intents: " + e.andAllIntent.join(', ')); }
+                    if (allIntents) { match = true; reasons.push("All Intents: " + intentAllList.join(', ')); }
                 }
 
-                // 3. Tag Requirements (Check against activeTags)
+                // 5. Tag Requirements (Check against activeTags)
                 if (activeTags.size > 0) {
                     var reqAny = (e.andAny || []).concat(e.requireTags || []);
                     if (reqAny.length > 0) {
@@ -15496,75 +15506,85 @@ module.exports = __webpack_require__(63);
                         if (lowerMsg.includes(b.toLowerCase()) || activeTags.has(b.toUpperCase())) { blocked = true; break; }
                     }
 
-                    // Check emotion blocks
-                    if (e.notAnyEmotion && e.notAnyEmotion.length) {
-                        for (var emo of e.notAnyEmotion) {
+                    // Check emotion blocks (support all field name variations)
+                    var blockEmotionAnyList = (e.notAnyEmotion || []).concat(e.blockAnyEmotion || []).concat(e.blockEmotion || []);
+                    if (blockEmotionAnyList.length) {
+                        for (var emo of blockEmotionAnyList) {
                             if (activeEmotions.has(emo.toLowerCase())) { blocked = true; break; }
                         }
                     }
-                    if (e.notAllEmotion && e.notAllEmotion.length) {
+                    var blockEmotionAllList = (e.notAllEmotion || []).concat(e.blockAllEmotion || []);
+                    if (blockEmotionAllList.length) {
                         var hasAllEmotions = true;
-                        for (var emo of e.notAllEmotion) {
+                        for (var emo of blockEmotionAllList) {
                             if (!activeEmotions.has(emo.toLowerCase())) { hasAllEmotions = false; break; }
                         }
                         if (hasAllEmotions) blocked = true;
                     }
 
                     // Check long-term emotion blocks
-                    if (e.notAnyLongTermEmotion && e.notAnyLongTermEmotion.length) {
-                        for (var emo of e.notAnyLongTermEmotion) {
+                    var blockLTEmotionAnyList = (e.notAnyLongTermEmotion || []);
+                    if (blockLTEmotionAnyList.length) {
+                        for (var emo of blockLTEmotionAnyList) {
                             var ltEmo = emo.toLowerCase().startsWith('lt_') ? emo.toLowerCase() : 'lt_' + emo.toLowerCase();
                             if (activeEmotions.has(ltEmo)) { blocked = true; break; }
                         }
                     }
-                    if (e.notAllLongTermEmotion && e.notAllLongTermEmotion.length) {
+                    var blockLTEmotionAllList = (e.notAllLongTermEmotion || []);
+                    if (blockLTEmotionAllList.length) {
                         var hasAllLTEmotions = true;
-                        for (var emo of e.notAllLongTermEmotion) {
+                        for (var emo of blockLTEmotionAllList) {
                             var ltEmo = emo.toLowerCase().startsWith('lt_') ? emo.toLowerCase() : 'lt_' + emo.toLowerCase();
                             if (!activeEmotions.has(ltEmo)) { hasAllLTEmotions = false; break; }
                         }
                         if (hasAllLTEmotions) blocked = true;
                     }
 
-                    // Check eros blocks
-                    if (e.notAnyEros && e.notAnyEros.length) {
-                        for (var eros of e.notAnyEros) {
+                    // Check eros blocks (support all field name variations)
+                    var blockErosAnyList = (e.notAnyEros || []).concat(e.blockAnyEros || []).concat(e.blockEros || []);
+                    if (blockErosAnyList.length) {
+                        for (var eros of blockErosAnyList) {
                             if (activeEros.has(eros.toLowerCase())) { blocked = true; break; }
                         }
                     }
-                    if (e.notAllEros && e.notAllEros.length) {
+                    var blockErosAllList = (e.notAllEros || []).concat(e.blockAllEros || []);
+                    if (blockErosAllList.length) {
                         var hasAllEros = true;
-                        for (var eros of e.notAllEros) {
+                        for (var eros of blockErosAllList) {
                             if (!activeEros.has(eros.toLowerCase())) { hasAllEros = false; break; }
                         }
                         if (hasAllEros) blocked = true;
                     }
 
                     // Check long-term eros blocks
-                    if (e.notAnyLongTermEros && e.notAnyLongTermEros.length) {
-                        for (var eros of e.notAnyLongTermEros) {
+                    var blockLTErosAnyList = (e.notAnyLongTermEros || []);
+                    if (blockLTErosAnyList.length) {
+                        for (var eros of blockLTErosAnyList) {
                             var ltEros = eros.toLowerCase().startsWith('lt_') ? eros.toLowerCase() : 'lt_' + eros.toLowerCase();
                             if (activeEros.has(ltEros)) { blocked = true; break; }
                         }
                     }
-                    if (e.notAllLongTermEros && e.notAllLongTermEros.length) {
+                    var blockLTErosAllList = (e.notAllLongTermEros || []);
+                    if (blockLTErosAllList.length) {
                         var hasAllLTEros = true;
-                        for (var eros of e.notAllLongTermEros) {
+                        for (var eros of blockLTErosAllList) {
                             var ltEros = eros.toLowerCase().startsWith('lt_') ? eros.toLowerCase() : 'lt_' + eros.toLowerCase();
                             if (!activeEros.has(ltEros)) { hasAllLTEros = false; break; }
                         }
                         if (hasAllLTEros) blocked = true;
                     }
 
-                    // Check intent blocks
-                    if (e.notAnyIntent && e.notAnyIntent.length) {
-                        for (var intent of e.notAnyIntent) {
+                    // Check intent blocks (support all field name variations)
+                    var blockIntentAnyList = (e.notAnyIntent || []).concat(e.blockAnyIntent || []).concat(e.blockIntent || []);
+                    if (blockIntentAnyList.length) {
+                        for (var intent of blockIntentAnyList) {
                             if (activeIntents.has(intent.toLowerCase())) { blocked = true; break; }
                         }
                     }
-                    if (e.notAllIntent && e.notAllIntent.length) {
+                    var blockIntentAllList = (e.notAllIntent || []).concat(e.blockAllIntent || []);
+                    if (blockIntentAllList.length) {
                         var hasAllIntents = true;
-                        for (var intent of e.notAllIntent) {
+                        for (var intent of blockIntentAllList) {
                             if (!activeIntents.has(intent.toLowerCase())) { hasAllIntents = false; break; }
                         }
                         if (hasAllIntents) blocked = true;
